@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NextRouter } from 'next/router';
 import { Select } from 'antd';
+import styled from 'styled-components';
 import { ModelIcon, TranslateIcon } from '@/utils/icons';
+import { RobotSVG } from '@/utils/svgs';
 import { renderToString } from 'react-dom/server';
 import {
   Dispatcher,
@@ -19,6 +21,12 @@ import {
 import { TEMPLATE_OPTIONS as SAMPLE_DATASET_INFO } from '@/components/pages/setup/utils';
 import { getLanguageText } from '@/utils/language';
 import * as events from '@/utils/events';
+
+const RobotIcon = styled(RobotSVG)`
+  width: 24px;
+  height: 24px;
+`;
+
 const defaultConfigs: DriverConfig = {
   progressText: '{{current}} / {{total}}',
   nextBtnText: 'Next',
@@ -41,6 +49,10 @@ export const makeStoriesPlayer =
           playDataModelingGuide(...args, dispatcher),
         [LEARNING.SWITCH_PROJECT_LANGUAGE]: () =>
           playSwitchProjectLanguageGuide(...args, dispatcher),
+        [LEARNING.QUESTION_SQL_PAIRS_GUIDE]: () =>
+          playQuestionSQLPairsGuide(...args, dispatcher),
+        [LEARNING.SAVE_TO_KNOWLEDGE]: () =>
+          playSaveToKnowledgeGuide(...args, dispatcher),
       }[id] || null;
     return action && action();
   };
@@ -344,6 +356,103 @@ const playSwitchProjectLanguageGuide = (
           }
           $driver.destroy();
           dispatcher?.onDone();
+        },
+      },
+    },
+  ]);
+  $driver.drive();
+};
+
+const playQuestionSQLPairsGuide = (
+  $driver: DriverObj,
+  _router: NextRouter,
+  _payload: StoryPayload,
+  dispatcher: Dispatcher,
+) => {
+  if ($driver === null) {
+    console.error('Driver object is not initialized.');
+    return;
+  }
+
+  if ($driver.isActive()) $driver.destroy();
+
+  $driver.setConfig({ ...defaultConfigs, showProgress: false });
+  $driver.setSteps([
+    {
+      popover: {
+        title: renderToString(
+          <div className="pt-4">
+            <div className="-mx-4" style={{ minHeight: 417 }}>
+              <img className="mb-4" src="" alt="question-sql-pairs-guide" />
+            </div>
+            Build Your Knowledge Base
+          </div>,
+        ),
+        description: renderToString(
+          <>
+            Create and manage Question-SQL Pairs to refine Wren AI’s SQL
+            generation. You can manually add pairs here or go to Home, ask a
+            question, and save the correct answer to Knowledge. The more you
+            save, the smarter Wren AI becomes!
+          </>,
+        ),
+        onPopoverRender: (popoverDom: DriverPopoverDOM) => {
+          resetPopoverStyle(popoverDom, 720);
+        },
+        doneBtnText: 'Get Started',
+        onNextClick: () => {
+          $driver.destroy();
+          dispatcher?.onDone && dispatcher.onDone();
+        },
+      },
+    },
+  ]);
+  $driver.drive();
+};
+
+const playSaveToKnowledgeGuide = (
+  $driver: DriverObj,
+  _router: NextRouter,
+  _payload: StoryPayload,
+  dispatcher: Dispatcher,
+) => {
+  if ($driver === null) {
+    console.error('Driver object is not initialized.');
+    return;
+  }
+  if ($driver.isActive()) $driver.destroy();
+
+  $driver.setConfig({ ...defaultConfigs, showProgress: false });
+
+  $driver.setSteps([
+    {
+      element:
+        '[data-guideid="last-answer-result"] [data-guideid="save-to-knowledge"]',
+      popover: {
+        side: 'top',
+        align: 'start',
+        title: renderToString(
+          <>
+            <div className="mb-1">
+              <RobotIcon />
+            </div>
+            Save to Knowledge
+          </>,
+        ),
+        description: renderToString(
+          <>
+            If the AI-generated answer is correct, save it as a Question-SQL
+            pair to improve AI learning. If it's incorrect, refine it with
+            follow-ups before saving to ensure accuracy.
+          </>,
+        ),
+        onPopoverRender: (popoverDom: DriverPopoverDOM) => {
+          resetPopoverStyle(popoverDom, 360);
+        },
+        doneBtnText: 'Got it',
+        onNextClick: () => {
+          $driver.destroy();
+          dispatcher?.onDone && dispatcher.onDone();
         },
       },
     },
